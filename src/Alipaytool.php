@@ -6,7 +6,7 @@
  * Time: 下午2:24
  */
 
-namespace Icharle\Alipaytool;
+namespace Muchiiu\Alipaytool;
 
 class Alipaytool
 {

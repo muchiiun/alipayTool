@@ -11,7 +11,7 @@
 **运行以下命令以获取最新版本：**
 
 ```
-composer require icharle/alipaytool dev-master
+composer require muchiiu/alipaytool dev-master
 ```
 
 **将服务提供者添加到配置文件中的`providers`数组中`config/app.php`，如下所示：**
@@ -21,7 +21,7 @@ composer require icharle/alipaytool dev-master
 
     ...
 
-    Icharle\Alipaytool\AlipaytoolServiceProvider::class,
+    Muchiiu\Alipaytool\AlipaytoolServiceProvider::class,
 ]
 ```
 

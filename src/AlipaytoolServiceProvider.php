@@ -6,7 +6,7 @@
  * Time: 下午2:17
  */
 
-namespace Icharle\Alipaytool;
+namespace Muchiiu\Alipaytool;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Storage;

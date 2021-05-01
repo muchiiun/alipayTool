@@ -6,7 +6,7 @@
  * Time: 上午12:22
  */
 
-namespace Icharle\Alipaytool;
+namespace Muchiiu\Alipaytool;
 use Illuminate\Support\Facades\Storage;
 
 class Rsasign
