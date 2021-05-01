@@ -9,7 +9,7 @@
             "email": "511714326@qq.com"
         }
     ],
-    "minimum-stability": "0.0.2",
+    "minimum-stability": "dev",
     "require": {},
     "autoload": {
         "psr-4": {
