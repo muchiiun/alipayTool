@@ -1,5 +1,5 @@
 {
-    "name": "icharle/alipaytool",
+    "name": "muchiiu/alipaytool",
     "description": "支付宝授权信息接口及授权令牌接口",
     "type": "library",
     "license": "MIT",
