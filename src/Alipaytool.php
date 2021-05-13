@@ -65,6 +65,16 @@ class Alipaytool
     const API_METHOD_GET_USER_INFO_RESPONSE = 'alipay_user_info_share_response';
 
     /**
+     * 线上资金授权冻结接口返回
+     */
+    const API_METHOD_FUND_AUTH_ORDER_APP_FREEZE_RESPONSE="alipay_fund_auth_order_app_freeze_response";
+
+    /** 线上资金授权冻结接口
+     *  https://opendocs.alipay.com/apis/api_28/alipay.fund.auth.order.app.freeze
+     */
+    const API_METHOD_FUND_AUTH_ORDER_APP_FREEZE = 'alipay.fund.auth.order.app.freeze';
+
+    /**
      * @var
      * 应用APP_ID  $appId
      */
@@ -75,18 +85,33 @@ class Alipaytool
         self::$appId = config('alipaytool.ALIPAY_APP_ID');
     }
 
+    /** access_token换取用户信息
+     * @param $access_token
+     * @return array|mixed
+     */
     public static function getUserInfoByAccessToken($access_token)
     {
         $param = self::buildUserInfoParams($access_token);
-        $ret = self::curl(self::GATEWAYURL . http_build_query($param));
+        $ret = Utils::curl(self::GATEWAYURL . http_build_query($param));
         return self::Resopnse($ret, self::API_METHOD_GET_USER_INFO_RESPONSE);
     }
 
+    /** 根据前端生成的code去换取access_token
+     * @param $authCode
+     * @return array|mixed
+     */
     public static function getAccessToken($authCode)
     {
         $param = self::buildAuthCodeParams($authCode);
-        $ret = self::curl(self::GATEWAYURL . http_build_query($param));
+        $ret = Utils::curl(self::GATEWAYURL . http_build_query($param));
         return self::Resopnse($ret, self::API_METHOD_AUTH_TOKEN_RESPONSE);
+    }
+
+    public static function fundAuthOrderAppFreeze($params)
+    {
+        $param = self::buildFundAuthOrderAppFreezeParams($params);
+        $ret = Utils::curl(self::GATEWAYURL . http_build_query($param));
+        return self::Resopnse($ret, self::API_METHOD_FUND_AUTH_ORDER_APP_FREEZE_RESPONSE);
     }
 
     public static function Resopnse($result, $detailResopnse)
@@ -101,15 +126,37 @@ class Alipaytool
         }
     }
 
+    /** 构建获取用户信息请求业务参数
+     * @param $token
+     * @return array
+     */
     public static function buildUserInfoParams($token)
     {
         $UserInfoParams = [
             'auth_token' => $token,
         ];
-        $Param = self::buildSign(static::API_METHOD_GET_USER_INFO, $UserInfoParams);
-        return $Param;
+        return self::buildSign(static::API_METHOD_GET_USER_INFO, $UserInfoParams);
     }
 
+    /**
+     * 构建线上资金授权冻结接口业务参数
+     * @param $params
+     * @return array
+     */
+    public static function buildFundAuthOrderAppFreezeParams($params)
+    {
+        //out_order_no,out_request_no,order_title,amount必填项
+        assert(isset($params["out_order_no"]) && $params["out_request_no"] && $params["order_title"] && $params["amount"], "缺少必要参数");
+        //销售产品码。新接入线上预授权的业务，支付宝预授权产品固定为 PRE_AUTH_ONLINE；境外预授权产品固定为 OVERSEAS_INSTORE_AUTH 。
+        $params["product_code"] = "PRE_AUTH_ONLINE";
+        return self::buildSign(static::API_METHOD_FUND_AUTH_ORDER_APP_FREEZE, $params);
+    }
+
+    /** 构建获取用户授权code请求业务参数
+     * @param $code
+     * @param string $refreshToken
+     * @return array
+     */
     public static function buildAuthCodeParams($code, $refreshToken = '')
     {
         $AuthCodeParams = [
@@ -121,9 +168,9 @@ class Alipaytool
         return $Param;
     }
 
-    /**
-     * @param $method 接口名称(API_METHOD_AUTH_TOKEN、API_METHOD_GET_USER_INFO)
-     * @return $Params 公共参数
+    /** 构建公共参数
+     * @param $method string (API_METHOD_AUTH_TOKEN、API_METHOD_GET_USER_INFO)
+     * @return mixed $Params 公共参数
      */
     public static function buildCommonParams($method)
     {
@@ -140,13 +187,15 @@ class Alipaytool
 
     /**
      * 签名生成sign值
-     * @param $apiMethod 接口名称
-     * @param $businessParams 业务特殊参数
+     * @param $apiMethod string 接口名称
+     * @param $businessParams array  业务特殊参数
      * @return array
      */
     public static function buildSign($apiMethod, $businessParams)
     {
+        //构建公共参数
         $pubParam = self::buildCommonParams($apiMethod);
+        //构建业务参数
         $businessParams = array_merge($pubParam, $businessParams);
         $signContent = self::getSignContent($businessParams);
         $sign = (new Rsasign())::generateSignature($signContent);
@@ -156,7 +205,7 @@ class Alipaytool
 
     /**
      * 筛选并排序&&拼接
-     * @param $params 所有参数
+     * @param $params array 所有参数
      * @return string 待签名字符串
      * @see https://docs.open.alipay.com/291/106118 自行实现签名
      */
@@ -192,28 +241,5 @@ class Alipaytool
         return $value === null || trim($value) === '';
     }
 
-    protected static function curl($url)
-    {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_FAILONERROR, false);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
-        $headers = array('content-type: application/x-www-form-urlencoded;charset=utf8');
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-        $reponse = curl_exec($ch);
-
-        if (curl_errno($ch)) {
-            throw new Exception(curl_error($ch), 0);
-        } else {
-            $httpStatusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            if (200 !== $httpStatusCode) {
-                throw new Exception($reponse, $httpStatusCode);
-            }
-        }
-        curl_close($ch);
-        return json_decode($reponse, true);
-    }
 }
